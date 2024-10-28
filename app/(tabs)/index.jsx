@@ -1,8 +1,12 @@
 import { View, Text, StyleSheet, Button } from 'react-native'
 import React, { useEffect } from 'react'
 import {Link, useRouter} from 'expo-router'
-import services from './../utils/services'
-import {client} from './../utils/KindeConfig'
+import {supabase} from './../../utils/SupabaseConfig'
+import services from './../../utils/services'
+import {client} from './../../utils/KindeConfig'
+import Colors from './../../utils/Colors'
+import Header from './../../components/Header'
+import CircularChart from '../../components/CircularChart'
 
 export default function Home() {
 
@@ -10,6 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     checkUserAuth();
+    getCategoryList();
   }, [])
 
   /**
@@ -33,14 +38,24 @@ export default function Home() {
     }
   };
 
+  const getCategoryList = async () => {
+    const user = await client.getUserDetails();
+    const {data, error} = await supabase.from('Category')
+    .select('*')
+    .eq('created_by', user.email)
+
+    // console.log("Data",data);
+  }
+
   return (
     <View style= {{
       marginTop: 20,
+      padding: 20,
+      backgroundColor: Colors.PRIMARY,
+      height:150
     }}>
-      <Text style={styles.text}>I like money so much!</Text>
-
-      <Button title='Logout' onPress={handleLogout} />
-
+      <Header/>
+      <CircularChart/>
     </View>
   )
 }
