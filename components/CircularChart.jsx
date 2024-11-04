@@ -1,21 +1,56 @@
 import { View, Text, StyleSheet } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Colors from '../utils/Colors';
 import PieChart from 'react-native-pie-chart';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-export default function CircularChart() {
+export default function CircularChart({ categoryList }) {
 
     const widthAndHeight = 150;
     const [values, setValues] = useState([1]);
     const [sliceColor, setSliceColor] = useState([Colors.GRAY]);
+    const [totalCalculatedEstimate, setTotalCalculatedEstimates] = useState();
+
+    useEffect(() => {
+      categoryList && updateCircularChart();
+    }, [categoryList])
+
+    const updateCircularChart = () => {
+
+      let totalEstimates = 0;
+      let otherCost = 0;
+
+      setSliceColor([]);
+      setValues([]);
+      
+      categoryList?.forEach((item, index) => {
+        if (index < 4) {
+          let itemTotalCost = 0;
+          item.CategoryItems?.forEach((item_) => {
+            itemTotalCost = itemTotalCost + item_.cost;
+            totalEstimates = totalEstimates + item_.cost;
+          })
+          setSliceColor(sliceColor => [...sliceColor, Colors.COLOR_LIST[index]]);
+          setValues(values => [...values, itemTotalCost])
+        } else {
+          item.CategoryItems?.forEach((item_) => {
+            otherCost = otherCost + item_.cost;
+            totalEstimates = totalEstimates + item_.cost;
+          })
+        } 
+      });
+      setTotalCalculatedEstimates(totalEstimates);
+      setSliceColor(sliceColor => [...sliceColor, Colors.COLOR_LIST[4]]);
+      setValues(values => [...values, otherCost])
+
+    }
 
   return (
     <View style = {styles.container}>
       <Text style ={{
         fontSize: 20,
         fontFamily: 'outfit'
-      }}>Total Estimate : <Text style={{fontFamily:'outfit-bold'}}>0$</Text></Text>
+      }}>Total Estimate : <Text style={{fontFamily:'outfit-bold'}}>${totalCalculatedEstimate}</Text></Text>
       <View style={styles.subContainer}>
         <PieChart
                 widthAndHeight={widthAndHeight}
@@ -25,12 +60,29 @@ export default function CircularChart() {
                 coverFill={'#FFF'}
             />
 
-        <View style={{display:'flex', flexDirection: 'row', gap: 5, alignItems:'center'}}>
-            <MaterialCommunityIcons 
-            name="checkbox-blank-circle" 
-            size={24} color={Colors.GRAY} />
-            <Text>NA</Text>
-        </View>
+        {categoryList?.length == 0 ?
+          <View style={styles.chartNameContainer}>
+              <MaterialCommunityIcons 
+              name="checkbox-blank-circle" 
+              size={24} color={Colors.GRAY} />
+              <Text>NA</Text>
+          </View>
+          :
+          <View>
+            {categoryList?.map((category, index) => {
+              if (index <= 4) {
+                return (
+                  <View key={index} style={styles.chartNameContainer}>
+                      <MaterialCommunityIcons 
+                      name="checkbox-blank-circle" 
+                      size={24} color={Colors.COLOR_LIST[index]} />
+                      <Text>{ index < 4 ? category.name : 'Other'}</Text>
+                  </View>
+                );
+              }   
+            })}
+          </View>
+        }
       </View>
     </View>
   )
@@ -49,5 +101,11 @@ const styles = StyleSheet.create({
         display:'flex',
         flexDirection: 'row',
         gap: 40
+    },
+    chartNameContainer: {
+        display:'flex', 
+        flexDirection: 'row', 
+        gap: 5, 
+        alignItems:'center'
     }
 })
