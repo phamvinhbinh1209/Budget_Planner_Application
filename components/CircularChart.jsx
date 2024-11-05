@@ -7,105 +7,113 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 export default function CircularChart({ categoryList }) {
 
     const widthAndHeight = 150;
-    const [values, setValues] = useState([1]);
-    const [sliceColor, setSliceColor] = useState([Colors.GRAY]);
-    const [totalCalculatedEstimate, setTotalCalculatedEstimates] = useState();
+    const [values, setValues] = useState([]);
+    const [sliceColor, setSliceColor] = useState([]);
+    const [totalCalculatedEstimate, setTotalCalculatedEstimates] = useState(0);
 
     useEffect(() => {
       categoryList && updateCircularChart();
-    }, [categoryList])
+    }, [categoryList]);
 
     const updateCircularChart = () => {
-
       let totalEstimates = 0;
       let otherCost = 0;
 
-      setSliceColor([]);
-      setValues([]);
+      const updatedSliceColor = [];
+      const updatedValues = [];
       
       categoryList?.forEach((item, index) => {
+        let itemTotalCost = 0;
+
         if (index < 4) {
-          let itemTotalCost = 0;
           item.CategoryItems?.forEach((item_) => {
-            itemTotalCost = itemTotalCost + item_.cost;
-            totalEstimates = totalEstimates + item_.cost;
-          })
-          setSliceColor(sliceColor => [...sliceColor, Colors.COLOR_LIST[index]]);
-          setValues(values => [...values, itemTotalCost])
+            itemTotalCost += item_.cost;
+            totalEstimates += item_.cost;
+          });
+          updatedSliceColor.push(Colors.COLOR_LIST[index]);
+          updatedValues.push(itemTotalCost);
         } else {
           item.CategoryItems?.forEach((item_) => {
-            otherCost = otherCost + item_.cost;
-            totalEstimates = totalEstimates + item_.cost;
-          })
-        } 
+            otherCost += item_.cost;
+            totalEstimates += item_.cost;
+          });
+        }
       });
-      setTotalCalculatedEstimates(totalEstimates);
-      setSliceColor(sliceColor => [...sliceColor, Colors.COLOR_LIST[4]]);
-      setValues(values => [...values, otherCost])
 
-    }
+      updatedSliceColor.push(Colors.COLOR_LIST[4]);
+      updatedValues.push(otherCost);
+
+      setSliceColor(updatedSliceColor);
+      setValues(updatedValues);
+      setTotalCalculatedEstimates(totalEstimates);
+    };
 
   return (
-    <View style = {styles.container}>
-      <Text style ={{
+    <View style={styles.container}>
+      <Text style={{
         fontSize: 20,
         fontFamily: 'outfit'
-      }}>Total Estimate : <Text style={{fontFamily:'outfit-bold'}}>${totalCalculatedEstimate}</Text></Text>
+      }}>Total Estimate : <Text style={{ fontFamily: 'outfit-bold' }}>${totalCalculatedEstimate}</Text></Text>
       <View style={styles.subContainer}>
-        <PieChart
-                widthAndHeight={widthAndHeight}
-                series={values}
-                sliceColor={sliceColor}
-                coverRadius={0.65}
-                coverFill={'#FFF'}
-            />
-
-        {categoryList?.length == 0 ?
+        {values.reduce((a, b) => a + b, 0) > 0 ? (
+          <PieChart
+            widthAndHeight={widthAndHeight}
+            series={values}
+            sliceColor={sliceColor}
+            coverRadius={0.65}
+            coverFill={'#FFF'}
+          />
+        ) : (
+          <Text>No data available</Text> // Thông báo khi không có dữ liệu
+        )}
+        
+        {categoryList?.length === 0 ? (
           <View style={styles.chartNameContainer}>
-              <MaterialCommunityIcons 
-              name="checkbox-blank-circle" 
+            <MaterialCommunityIcons
+              name="checkbox-blank-circle"
               size={24} color={Colors.GRAY} />
-              <Text>NA</Text>
+            <Text>NA</Text>
           </View>
-          :
+        ) : (
           <View>
             {categoryList?.map((category, index) => {
               if (index <= 4) {
                 return (
                   <View key={index} style={styles.chartNameContainer}>
-                      <MaterialCommunityIcons 
-                      name="checkbox-blank-circle" 
+                    <MaterialCommunityIcons
+                      name="checkbox-blank-circle"
                       size={24} color={Colors.COLOR_LIST[index]} />
-                      <Text>{ index < 4 ? category.name : 'Other'}</Text>
+                    <Text>{index < 4 ? category.name : 'Other'}</Text>
                   </View>
                 );
-              }   
+              }
+              return null;
             })}
           </View>
-        }
+        )}
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        marginTop: 20,
-        backgroundColor: Colors.WHITE,
-        padding: 20,
-        borderRadius: 15,
-        elevation: 1
-    },
-    subContainer: {
-        marginTop: 10, 
-        display:'flex',
-        flexDirection: 'row',
-        gap: 40
-    },
-    chartNameContainer: {
-        display:'flex', 
-        flexDirection: 'row', 
-        gap: 5, 
-        alignItems:'center'
-    }
-})
+  container: {
+    marginTop: 20,
+    backgroundColor: Colors.WHITE,
+    padding: 20,
+    borderRadius: 15,
+    elevation: 1
+  },
+  subContainer: {
+    marginTop: 10, 
+    display:'flex',
+    flexDirection: 'row',
+    gap: 40
+  },
+  chartNameContainer: {
+    display:'flex', 
+    flexDirection: 'row', 
+    gap: 5, 
+    alignItems:'center'
+  }
+});
